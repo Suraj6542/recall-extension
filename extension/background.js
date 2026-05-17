@@ -1,4 +1,5 @@
-const API_BASE = 'http://localhost:8000/api'
+// const API_BASE = 'http://localhost:8000/api'
+const API_BASE = "https://django-production-31ae.up.railway.app/api"
 const POLL_INTERVAL_MINUTES = 1
 const NOTIFIED_KEY = 'notifiedIds'
 

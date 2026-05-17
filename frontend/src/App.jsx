@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react"
 
-const API = "http://localhost:8000/api"
-
+// const API = "http://localhost:8000/api"
+const API = "https://django-production-31ae.up.railway.app/api"
 const TYPES = {
   LINK:     { icon: "🔗", label: "Link",     color: "#5b8dee" },
   TODO:     { icon: "✅", label: "Todo",     color: "#4db87a" },
