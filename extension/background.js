@@ -40,26 +40,37 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 // ─── POLL ─────────────────────────────────────────────────────────────────────
 async function checkDueItems() {
   try {
-    // ── Guard: skip if not logged in ──
     const token = await getToken()
-    if (!token) return   // user hasn't logged in yet, nothing to do
+    if (!token) return
 
-    const res = await authFetch(`${API_BASE}/items/due/`)
-
-    // ── Guard: server might be down or token expired ──
-    if (!res.ok) {
-      console.warn('[Recall] Due items fetch failed, status:', res.status)
-      return
+    let res
+    try {
+      res = await fetch(`${API_BASE}/items/due/`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        }
+      })
+    } catch (networkErr) {
+      return  // server down, wait for next poll
     }
+
+    if (!res.ok) return
 
     const items = await res.json()
     if (!Array.isArray(items) || items.length === 0) return
 
-    const stored   = await chrome.storage.local.get(NOTIFIED_KEY)
-    const notified = new Set(stored[NOTIFIED_KEY] || [])
+    const stored      = await chrome.storage.local.get(NOTIFIED_KEY)
+    const notified    = new Set(stored[NOTIFIED_KEY] || [])
+    const activeNotifs = await chrome.notifications.getAll()
 
     for (const item of items) {
-      if (notified.has(item.id)) continue
+      const notifId = `recall-${item.id}`
+
+      // Already showing on screen — skip
+      if (activeNotifs[notifId]) continue
+
+      // Fire — whether first time or missed
       await fireNotification(item)
       notified.add(item.id)
     }
@@ -67,7 +78,6 @@ async function checkDueItems() {
     await chrome.storage.local.set({ [NOTIFIED_KEY]: [...notified] })
 
   } catch (err) {
-    // Server is down or network error — log quietly and wait for next poll
     console.warn('[Recall] Poll skipped:', err.message)
   }
 }
